@@ -48,7 +48,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import static io.axoniq.axonserver.connector.impl.ObjectUtils.*;
+import static io.axoniq.axonserver.connector.impl.ObjectUtils.doIfNotNull;
+import static io.axoniq.axonserver.connector.impl.ObjectUtils.hasLength;
+import static io.axoniq.axonserver.connector.impl.ObjectUtils.silently;
 
 /**
  * {@link ControlChannel} implementation, serving as the overall control and instruction connection between AxonServer
@@ -125,17 +127,21 @@ public class ControlChannelImpl extends AbstractAxonServerChannel implements Con
         );
         this.instructionHandlers.computeIfAbsent(
                 PlatformOutboundInstruction.RequestCase.RELEASE_SEGMENT,
-                i -> ProcessorInstructions.releaseSegmentHandler(processorInstructionHandlers)
+                i -> ProcessorInstructions.releaseSegmentHandler( processorInstructionHandlers )
         );
         this.instructionHandlers.computeIfAbsent(
                 PlatformOutboundInstruction.RequestCase.REQUEST_EVENT_PROCESSOR_INFO,
-                i -> ProcessorInstructions.requestInfoHandler(processorInfoSuppliers)
+                i -> ProcessorInstructions.requestInfoHandler( processorInfoSuppliers )
         );
         this.instructionHandlers.computeIfAbsent(
                 PlatformOutboundInstruction.RequestCase.REQUEST_RECONNECT,
                 i -> this::handleReconnectRequest
         );
-        platformServiceStub = PlatformServiceGrpc.newStub(channel);
+        this.instructionHandlers.computeIfAbsent(
+                PlatformOutboundInstruction.RequestCase.RESET_TOKENS,
+                i -> ProcessorInstructions.resetTokens( processorInstructionHandlers )
+        );
+        platformServiceStub = PlatformServiceGrpc.newStub( channel );
     }
 
     private CompletableFuture<InstructionAck> sendHeartBeat() {

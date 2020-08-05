@@ -33,7 +33,17 @@ public interface ProcessorInstructionHandler {
      * @param segmentId the id of the segment to release
      * @return a CompletableFuture that completes to true or false, depending on the successful release of the segment
      */
-    CompletableFuture<Boolean> releaseSegment(int segmentId);
+    CompletableFuture<Boolean> releaseSegment( int segmentId );
+
+    /**
+     * Instruction to reset the tokens.
+     * <p>
+     * The return future must be completed with a {@code true} after the tokens has been successfully reset. When
+     * failing to reset the tokens, the CompletableFuture must complete with either {@code false} or exceptionally.
+     *
+     * @return a CompletableFuture that completes to true or false, depending on the successful reset of the tokens
+     */
+    CompletableFuture<Boolean> resetTokens();
 
     /**
      * Instruction to split the segment with given {@code segmentId}. If the local node doesn't have a claim on the
@@ -42,7 +52,7 @@ public interface ProcessorInstructionHandler {
      * @param segmentId the identifier of the segment to split
      * @return a CompletableFuture that completes to true or false, depending on the successful split of the segment
      */
-    CompletableFuture<Boolean> splitSegment(int segmentId);
+    CompletableFuture<Boolean> splitSegment( int segmentId );
 
     /**
      * Instruction to merge the segment with given {@code segmentId} with its counterpart. If the local node doesn't

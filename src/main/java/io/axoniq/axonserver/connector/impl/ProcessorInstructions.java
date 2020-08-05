@@ -71,10 +71,30 @@ public abstract class ProcessorInstructions {
     public static InstructionHandler<PlatformOutboundInstruction, PlatformInboundInstruction> splitHandler(
             Map<String, ProcessorInstructionHandler> instructionHandlers
     ) {
-        return (instruction, replyChannel) -> {
+
+        return ( instruction, replyChannel ) -> {
             String processorName = instruction.getSplitEventProcessorSegment().getProcessorName();
             int segmentId = instruction.getSplitEventProcessorSegment().getSegmentIdentifier();
-            executeAndReply(replyChannel, instructionHandlers.get(processorName), h -> h.splitSegment(segmentId));
+            executeAndReply( replyChannel, instructionHandlers.get( processorName ), h -> h.splitSegment( segmentId ) );
+        };
+    }
+
+    /**
+     * Provides a {@link InstructionHandler} which handles processor token reset from AxonServer.
+     *
+     * @param instructionHandlers the collection of instruction handler instances to retrieve the {@link
+     *                            ProcessorInstructionHandler} from to execute the actual {@link
+     *                            ProcessorInstructionHandler#resetTokens() operation
+     * @return the {@link InstructionHandler} to delegate the reset tokens with
+     */
+    public static InstructionHandler<PlatformOutboundInstruction, PlatformInboundInstruction> resetTokens(
+            Map<String, ProcessorInstructionHandler> instructionHandlers
+    ) {
+
+        return ( instruction, replyChannel ) -> {
+            String processorName = instruction.getResetTokens().getProcessorName();
+            executeAndReply( replyChannel, instructionHandlers.get( processorName ),
+                             ProcessorInstructionHandler::resetTokens );
         };
     }
 
