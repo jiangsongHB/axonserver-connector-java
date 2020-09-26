@@ -111,6 +111,11 @@ public class AxonServerConnectionFactory {
         );
         this.processorInfoUpdateFrequency = builder.processorInfoUpdateFrequency;
         this.eventHeartbeatInterval = builder.eventHeartbeatInterval;
+        if (eventHeartbeatInterval > 0) {
+            logger.info("Initialized AxonServerConnectionFactory with event stream heartbeat interval {}", this.eventHeartbeatInterval);
+        } else {
+            logger.info("Initialized AxonServerConnectionFactory with event stream heartbeat disabled");
+        }
     }
 
     /**

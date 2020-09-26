@@ -264,11 +264,13 @@ public class ControlChannelImpl extends AbstractAxonServerChannel implements Con
     @Override
     public void enableHeartbeat(long interval, long timeout, TimeUnit timeUnit) {
         heartbeatMonitor.enableHeartbeat(interval, timeout, timeUnit);
+        logger.info("Enabled heartbeat with interval {}, timeout {} and timeUnit {}", interval, timeout, timeUnit);
     }
 
     @Override
     public void disableHeartbeat() {
         heartbeatMonitor.disableHeartbeat();
+        logger.info("Heartbeat disabled");
     }
 
     @Override
