@@ -184,7 +184,9 @@ public class ControlChannelImpl extends AbstractAxonServerChannel implements Con
                                                                          .build());
                 heartbeatMonitor.resume();
             } catch (Exception e) {
+                logger.info("Failed to send client identification for context '{}'. Scheduling reconnect...", context, e);
                 instructionDispatcher.set(null);
+                scheduleReconnect();
                 instructionsForPlatform.onError(e);
             }
         }
