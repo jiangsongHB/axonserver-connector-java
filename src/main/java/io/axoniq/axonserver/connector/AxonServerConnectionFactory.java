@@ -241,7 +241,16 @@ public class AxonServerConnectionFactory {
         private final String componentName;
         private final String clientInstanceId;
         private final Map<String, String> tags = new HashMap<>();
-        private long eventHeartbeatInterval = Long.parseLong(System.getProperty("axon_event_heartbeat_interval", "0"));
+        private long eventHeartbeatInterval = Long.parseLong(System.getProperty("axon_event_heartbeat_interval", environmentVariable("AXON_EVENT_HEARTBEAT_INTERVAL", "5000")));
+
+        private String environmentVariable(String env, String defaultValue) {
+            String value = System.getenv(env);
+            if (value == null || "".equals(value)) {
+                return defaultValue;
+            }
+            return value;
+        }
+
         private long processorInfoUpdateFrequency = 2000;
         private List<ServerAddress> routingServers;
         private long connectTimeout = 10000;
