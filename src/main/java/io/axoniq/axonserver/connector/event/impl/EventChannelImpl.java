@@ -49,6 +49,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * {@link EventChannel} implementation, serving as the event connection between AxonServer and a client application.
@@ -61,6 +62,7 @@ public class EventChannelImpl extends AbstractAxonServerChannel implements Event
 
     private final EventStoreGrpc.EventStoreStub eventStore;
     private final EventSchedulerGrpc.EventSchedulerStub eventScheduler;
+    private final long heartbeatInterval;
     private final Set<BufferedEventStream> buffers = ConcurrentHashMap.newKeySet();
     // guarded by -this-
 
@@ -70,10 +72,12 @@ public class EventChannelImpl extends AbstractAxonServerChannel implements Event
      * @param executor a {@link ScheduledExecutorService} used to schedule reconnects of this channel
      * @param channel  the {@link AxonServerManagedChannel} used to form the connection with AxonServer
      */
-    public EventChannelImpl(ScheduledExecutorService executor, AxonServerManagedChannel channel) {
+    public EventChannelImpl(ScheduledExecutorService executor, AxonServerManagedChannel channel,
+                            long heartbeatInterval, TimeUnit timeUnit) {
         super(executor, channel);
         eventStore = EventStoreGrpc.newStub(channel);
         eventScheduler = EventSchedulerGrpc.newStub(channel);
+        this.heartbeatInterval = timeUnit.toMillis(heartbeatInterval);
     }
 
     @Override
@@ -168,7 +172,8 @@ public class EventChannelImpl extends AbstractAxonServerChannel implements Event
         BufferedEventStream buffer = new BufferedEventStream(token,
                                                              Math.max(64, bufferSize),
                                                              Math.max(16, Math.min(bufferSize, refillBatch)),
-                                                             forceReadFromLeader);
+                                                             forceReadFromLeader,
+                                                             heartbeatInterval, TimeUnit.MILLISECONDS);
         buffers.add(buffer);
         buffer.onCloseRequested(() -> buffers.remove(buffer));
         try {

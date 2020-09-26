@@ -50,6 +50,7 @@ public class ContextConnection implements AxonServerConnection {
     private final AtomicReference<QueryChannelImpl> queryChannel = new AtomicReference<>();
     private final ScheduledExecutorService executorService;
     private final AxonServerManagedChannel connection;
+    private final long eventHeartbeatInterval;
 
     /**
      * Construct a {@link ContextConnection} carrying context information.
@@ -60,13 +61,17 @@ public class ContextConnection implements AxonServerConnection {
      *                                     channels this connection provides
      * @param connection                   the {@link AxonServerManagedChannel} used to form the connections with
      *                                     AxonServer
-     * @param processorInfoUpdateFrequency the update frequency in milliseconds of event processor information
+     * @param processorInfoUpdateFrequency the update frequency of event processor information
+     * @param eventHeartbeatInterval       the interval at which to request heartbeats on event streams
+     * @param timeUnit                     the unit of time in which intervals and deadlines are expressed
      * @param context                      the context this connection belongs to
      */
     public ContextConnection(ClientIdentification clientIdentification,
                              ScheduledExecutorService executorService,
                              AxonServerManagedChannel connection,
                              long processorInfoUpdateFrequency,
+                             long eventHeartbeatInterval,
+                             TimeUnit timeUnit,
                              String context) {
         this.clientIdentification = clientIdentification;
         this.executorService = executorService;
@@ -75,8 +80,9 @@ public class ContextConnection implements AxonServerConnection {
                                                      context,
                                                      executorService,
                                                      connection,
-                                                     processorInfoUpdateFrequency,
+                                                     timeUnit.toMillis(processorInfoUpdateFrequency),
                                                      this::reconnectChannels);
+        this.eventHeartbeatInterval = timeUnit.toMillis(eventHeartbeatInterval);
     }
 
     private void reconnectChannels() {
@@ -146,7 +152,7 @@ public class ContextConnection implements AxonServerConnection {
     @Override
     public EventChannel eventChannel() {
         EventChannelImpl channel = this.eventChannel.updateAndGet(
-                getIfNull(() -> new EventChannelImpl(executorService, connection))
+                getIfNull(() -> new EventChannelImpl(executorService, connection, eventHeartbeatInterval, TimeUnit.MILLISECONDS))
         );
         return ensureConnected(channel);
     }

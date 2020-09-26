@@ -87,6 +87,7 @@ public class AxonServerConnectionFactory {
     private volatile boolean shutdown;
     private final ReconnectConfiguration reconnectConfiguration;
     private final long processorInfoUpdateFrequency;
+    private final long eventHeartbeatInterval;
 
     /**
      * Instantiates an {@link AxonServerConnectionFactory} with the given {@code builder}.
@@ -109,6 +110,7 @@ public class AxonServerConnectionFactory {
                 TimeUnit.MILLISECONDS
         );
         this.processorInfoUpdateFrequency = builder.processorInfoUpdateFrequency;
+        this.eventHeartbeatInterval = builder.eventHeartbeatInterval;
     }
 
     /**
@@ -181,6 +183,8 @@ public class AxonServerConnectionFactory {
                         this::createChannel
                 ),
                 processorInfoUpdateFrequency,
+                eventHeartbeatInterval,
+                TimeUnit.MILLISECONDS,
                 context
         );
     }
@@ -237,6 +241,7 @@ public class AxonServerConnectionFactory {
         private final String componentName;
         private final String clientInstanceId;
         private final Map<String, String> tags = new HashMap<>();
+        private long eventHeartbeatInterval = Long.parseLong(System.getProperty("axon_event_heartbeat_interval", "0"));
         private long processorInfoUpdateFrequency = 2000;
         private List<ServerAddress> routingServers;
         private long connectTimeout = 10000;
@@ -343,12 +348,35 @@ public class AxonServerConnectionFactory {
         }
 
         /**
+         * Enables heartbeats on long running Event Streams. The given {@code interval} (expressed in the given
+         * {@code timeUnit} is the time at which AxonServer is requested to send heartbeat messages if no events are
+         * available for sending. When the client does not receive any message (normal event or heartbeat) within twice
+         * the given {@code interval}, the connection is assumed broken and will be closed.
+         * <p>
+         * Note that this option should only be enabled when the AxonServer version supports it. Enabling this while
+         * connecting to an AxonServer instance that does not support it will result in connections being regularly
+         * reset.
+         * <p>
+         * Heartbeats are disabled by default
+         *
+         * @param interval The interval to request heartbeat messages
+         * @param timeUnit The unit in which the interval is expressed
+         *
+         * @return this builder for further configuration
+         */
+        public Builder enableEventStreamHeartbeat(long interval, TimeUnit timeUnit) {
+            this.eventHeartbeatInterval = timeUnit.toMillis(interval);
+            return this;
+        }
+
+        /**
          * Defines the token used to authorize activity from this component on AxonServer.
          * <p>
          * Defaults to not using a Token. Defining a Token is mandatory when token-based authentication is enabled on
          * AxonServer.
          *
          * @param token The token to which the required authorizations have been assigned.
+         *
          * @return this builder for further configuration
          */
         public Builder token(String token) {
